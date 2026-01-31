@@ -31,7 +31,7 @@ function App() {
   const [expandedDayId, setExpandedDayId] = useState(null);
   const [showAllHistory, setShowAllHistory] = useState(false);
 
-  // 📸 新增：改為圖片陣列，支援多張
+  // 📸 圖片陣列
   const [images, setImages] = useState([]); 
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
@@ -63,7 +63,6 @@ function App() {
   const deleteItem = (id) => {
     if (window.confirm('確定要刪除這筆紀錄嗎？')) {
       setFoodLog(prev => prev.filter(item => item.id !== id));
-      // 若刪除的是當前分析結果，清空畫面
       if (result && result.id === id) {
         setResult(null);
         setImages([]);
@@ -78,7 +77,6 @@ function App() {
     }
   };
 
-  // 新增：移除單張預覽圖
   const removeImage = (indexToRemove) => {
     setImages(prev => prev.filter((_, index) => index !== indexToRemove));
   };
@@ -113,7 +111,6 @@ function App() {
   const SHOW_LIMIT = 3; 
   const visibleHistory = showAllHistory ? history : history.slice(0, SHOW_LIMIT);
 
-  // 壓縮圖片
   const compressImage = (file) => {
     return new Promise((resolve) => {
       const reader = new FileReader();
@@ -140,7 +137,6 @@ function App() {
     });
   };
 
-  // 🚀 新增：批次分析核心邏輯
   const analyzeFoodBatch = async () => {
     if (images.length === 0) return;
     if (!API_KEY) { setErrorMsg("❌ 找不到 API Key"); return; }
@@ -151,13 +147,11 @@ function App() {
       const genAI = new GoogleGenerativeAI(API_KEY);
       const model = genAI.getGenerativeModel({ model: MODEL_NAME });
 
-      // 準備多張圖片資料
       const imageParts = await Promise.all(images.map(async (imgObj) => {
         const base64 = await compressImage(imgObj.file);
         return { inlineData: { data: base64, mimeType: "image/jpeg" } };
       }));
 
-      // 更新 Prompt 以支援多圖總結
       const prompt = `你是一位專業營養師。這裡有 ${images.length} 張食物照片，它們屬於「同一餐」。
       請綜合分析這些照片，計算這頓餐的「總熱量」與「總營養」。
       
@@ -179,7 +173,6 @@ function App() {
         "advice": "整體建議 (30字內)"
       }`;
 
-      // 發送多圖請求
       const result = await model.generateContent([prompt, ...imageParts]);
       const rawText = (await result.response).text();
       
@@ -193,7 +186,6 @@ function App() {
         ...data, 
         id: Date.now(), 
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), 
-        // 紀錄僅存第一張圖作為代表
         imgUrl: images[0].url 
       };
 
@@ -219,7 +211,7 @@ function App() {
         file,
         url: URL.createObjectURL(file)
       }));
-      setImages(prev => [...prev, ...newImages]); // 追加模式
+      setImages(prev => [...prev, ...newImages]); 
     }
     e.target.value = '';
   };
@@ -346,12 +338,14 @@ function App() {
                     <button onClick={() => cameraInputRef.current.click()} className="flex flex-col items-center gap-2 group/btn relative">
                       <div className="absolute inset-0 bg-emerald-400 blur-2xl opacity-20 group-hover/btn:opacity-40 transition-opacity rounded-full"></div>
                       <div className="w-16 h-16 bg-white rounded-2xl shadow-lg flex items-center justify-center text-emerald-500 group-hover/btn:scale-105 border border-emerald-50 z-10"><Camera size={32} /></div>
-                      <span className="text-sm font-bold text-slate-600">拍攝第一道菜</span>
+                      {/* ✅ 文案已更新：簡單明瞭 */}
+                      <span className="text-sm font-bold text-slate-600">拍攝餐點</span>
                     </button>
                     <div className="flex items-center gap-3 w-3/4 opacity-30"><div className="h-[1px] bg-slate-400 flex-1"></div><span className="text-[10px] font-bold">OR</span><div className="h-[1px] bg-slate-400 flex-1"></div></div>
+                    {/* ✅ 文案已更新：去除「多張」字眼，保持簡潔 */}
                     <button onClick={() => uploadInputRef.current.click()} className="flex flex-col items-center gap-2 group/btn">
                       <div className="w-12 h-12 bg-white rounded-xl shadow-md flex items-center justify-center text-blue-400 group-hover/btn:scale-105 border border-blue-50"><ImageIcon size={20} /></div>
-                      <span className="text-xs font-bold text-slate-400">相簿多張選取</span>
+                      <span className="text-xs font-bold text-slate-400">從相簿選</span>
                     </button>
                   </div>
                 )}
@@ -373,7 +367,7 @@ function App() {
                 )}
               </div>
 
-              {/* 隱藏輸入框：加入 multiple 屬性 */}
+              {/* 隱藏輸入框 */}
               <input type="file" accept="image/*" capture="environment" ref={cameraInputRef} onChange={handleFileSelect} className="hidden" />
               <input type="file" accept="image/*" multiple ref={uploadInputRef} onChange={handleFileSelect} className="hidden" />
 
