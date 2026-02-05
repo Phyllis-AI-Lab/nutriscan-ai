@@ -7,7 +7,7 @@ function App() {
   const MODEL_NAME = "gemini-flash-latest";
   const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
-  // --- 狀態管理 (保留歷史紀錄與刪除機制) ---
+  // --- 狀態管理 ---
   const [foodLog, setFoodLog] = useState(() => {
     try {
       const saved = localStorage.getItem('nutriscan_log');
@@ -166,7 +166,7 @@ function App() {
       {
         "foodName": "組合餐名稱",
         "calories": 數字(總和),
-        "nutrients": { "protein": 數字, "fat": 數字, "carbs": 數字 },
+        "nutrients": { "protein": 數字, "fat": "脂肪(數字)", "carbs": "碳水(數字)" },
         "portionAdvice": "針對這整頓餐的份量建議",
         "liverRisk": { "level": "低/中/高", "message": "脂肪肝風險評估" },
         "warning": boolean,
@@ -272,7 +272,6 @@ function App() {
         <div className="p-6 space-y-6 flex-1 overflow-y-auto pb-32">
           {view === 'history' ? (
             <div className="space-y-4 animate-fade-in-up">
-              {/* History View Logic */}
               <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest pl-2">History Log {showAllHistory ? '(全部)' : `(近${SHOW_LIMIT}筆)`}</h3>
               {history.length === 0 ? <div className="text-center py-10 text-slate-300 text-sm">暫無歷史紀錄</div> : visibleHistory.map((day) => (
                 <div key={day.id} onClick={() => toggleHistoryItem(day.id)} className={`bg-white rounded-2xl border transition-all cursor-pointer overflow-hidden ${expandedDayId === day.id ?
@@ -287,7 +286,6 @@ function App() {
                     </div>
                     <div className="text-slate-300">{expandedDayId === day.id ? <ChevronUp size={20} /> : <ChevronDown size={20} />}</div>
                   </div>
-                  {/* Expanded History Details */}
                   {expandedDayId === day.id && (
                     <div className="bg-slate-50/50 p-5 pt-0 border-t border-slate-100 animate-fade-in-up">
                       <div className="mt-3 space-y-2"><p className="text-xs font-bold text-slate-400 uppercase tracking-wider">攝取清單</p><p className="text-sm text-slate-700 leading-relaxed">{day.foodList.join("、")}</p></div>
@@ -306,29 +304,30 @@ function App() {
             </div>
           ) : (
             <>
-              {/* 📸  多圖預覽區塊 */}
-              <div className="relative w-full aspect-[4/3] bg-gradient-to-br from-slate-50 to-slate-100 rounded-[32px] overflow-hidden border-4 border-white shadow-2xl shadow-slate-200/50 group flex flex-col">
+              {/* 📸  多圖預覽區塊 (Auto-Expand Mode) */}
+              <div className={`relative w-full ${images.length > 0 ? 'h-auto min-h-[300px]' : 'aspect-[4/3]'} bg-gradient-to-br from-slate-50 to-slate-100 rounded-[32px] overflow-hidden border-4 border-white shadow-2xl shadow-slate-200/50 group flex flex-col transition-all duration-300`}>
 
                 {images.length > 0 ? (
-                  <div className="flex-1 relative w-full h-full overflow-hidden">
-                    <div className="w-full h-full p-2 grid grid-cols-2 gap-2 overflow-y-auto content-start">
+                  <div className="flex-1 w-full">
+                    {/* ✅ 加入 pb-20 避免被底部按鈕遮擋 */}
+                    <div className="w-full p-2 grid grid-cols-2 gap-2 pb-24 content-start">
                       {images.map((img, idx) => (
-                        <div key={idx} className="relative aspect-square rounded-2xl overflow-hidden border border-slate-200 group/img shadow-sm">
+                        <div key={idx} className="relative aspect-square rounded-2xl overflow-hidden border border-slate-200 group/img shadow-sm animate-fade-in-up">
                           <img src={img.url} className="w-full h-full object-cover" />
                           {!result && <button onClick={() => removeImage(idx)} className="absolute top-1 right-1 bg-black/50 text-white rounded-full p-1 hover:bg-rose-500 backdrop-blur-sm transition-colors"><X size={12} /></button>}
                         </div>
                       ))}
                       
-                      {/* ✨  優化後的加菜按鈕  ✨ */}
+                      {/* ✨  加菜按鈕 (卡片化、字體加大)  ✨ */}
                       {!result && !loading && (
                         <button
                           onClick={() => uploadInputRef.current.click()}
-                          className="aspect-square rounded-2xl border-2 border-dashed border-slate-300 hover:border-emerald-400 hover:bg-emerald-50/30 flex flex-col items-center justify-center gap-1.5 transition-all group active:scale-95 bg-white/50"
+                          className="aspect-square rounded-2xl border-2 border-dashed border-slate-300 hover:border-emerald-400 hover:bg-emerald-50/30 flex flex-col items-center justify-center gap-2 transition-all group active:scale-95 bg-white/50 animate-fade-in-up"
                         >
-                          <div className="w-10 h-10 rounded-full bg-white shadow-sm border border-slate-100 flex items-center justify-center text-slate-300 group-hover:text-emerald-500 group-hover:border-emerald-200 transition-colors">
-                            <Plus size={22} strokeWidth={3} />
+                          <div className="w-12 h-12 rounded-full bg-white shadow-sm border border-slate-100 flex items-center justify-center text-slate-300 group-hover:text-emerald-500 group-hover:border-emerald-200 transition-colors">
+                            <Plus size={24} strokeWidth={3} />
                           </div>
-                          <span className="text-xs font-black text-slate-400 group-hover:text-emerald-600 tracking-wide">加菜</span>
+                          <span className="text-sm font-bold text-slate-400 group-hover:text-emerald-600 tracking-wide">加菜</span>
                         </button>
                       )}
                     </div>
